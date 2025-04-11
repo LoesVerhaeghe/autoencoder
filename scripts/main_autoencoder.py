@@ -14,7 +14,7 @@ from torchmetrics.image import StructuralSimilarityIndexMeasure as SSIM
 
 
 #use GPU if available
-torch.cuda.set_device(3) 
+torch.cuda.set_device(1) 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print('device =', device)
 
