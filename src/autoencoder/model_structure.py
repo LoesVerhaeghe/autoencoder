@@ -26,15 +26,15 @@ class Autoencoder(nn.Module):
             nn.BatchNorm2d(128),
             nn.Conv2d(128, 8, kernel_size=3, stride=2, padding=1),  
     
-            #nn.Flatten(),  # Flatten before latent space
-            #nn.Linear(4 * 32 * 24, 3000),  # H and W are the input image dimensions
-            # nn.ReLU()
+            nn.Flatten(),  # Flatten before latent space
+            nn.Linear(8 * 32 * 24, 128),  # H and W are the input image dimensions
+            # nn.ReLU() #optional, can help sometimes...
         )
 
        self.decoder = nn.Sequential(
-            #nn.Linear(3000, 4 * 32 * 24),  # Match the flattened dimension
-            #nn.ReLU(),
-            #nn.Unflatten(1, (4, 24, 32)),  # Reshape to match the input to ConvTranspose
+            nn.Linear(128, 8 * 32 * 24),  # Match the flattened dimension
+            nn.ReLU(),
+            nn.Unflatten(1, (8, 24, 32)),  # Reshape to match the input to ConvTranspose
 
             nn.ConvTranspose2d(8, 128, kernel_size=3, stride=2, padding=1, output_padding=1), 
             nn.LeakyReLU(),
@@ -62,10 +62,6 @@ class Autoencoder(nn.Module):
         
         if get_encoded:  # If flag is True, return the encoded images
            return x
-        
-        # x = self.flatten(x)
-        # x = self.fc1(x)
-        # x = self.fc2(x)
-        # x = x.view(-1, 1, 48, 64)  # Reshape to match the decoder's input size
+
         x = self.decoder(x)
         return x

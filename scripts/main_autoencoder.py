@@ -14,7 +14,7 @@ from torchmetrics.image import StructuralSimilarityIndexMeasure as SSIM
 
 
 #use GPU if available
-torch.cuda.set_device(1) 
+torch.cuda.set_device(0) 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print('device =', device)
 
@@ -84,7 +84,7 @@ visualize_reconstruction(model, device, val_loader, num_images=5, path='outputs/
 
 #Copy the folder structure from src_folder to dst_folder
 src_folder = 'data/microscope_images_grayscaled'
-dst_folder = 'outputs/microscope_images_encoded'
+dst_folder = 'outputs/microscope_images_encoded_128features'
 shutil.copytree(src_folder, dst_folder)
 
 def encode_images(magnification, dst_folder):
@@ -116,17 +116,17 @@ def encode_images(magnification, dst_folder):
 encode_images(magnification=10, dst_folder=dst_folder)
 encode_images(magnification=40, dst_folder=dst_folder)
 
-## plot latent space
-import matplotlib.pyplot as plt
-path='outputs/microscope_images_encoded/2024-03-12/basin5/40x/12125430_encoded.pt'
-image=torch.load(path)
+# ## plot latent space
+# import matplotlib.pyplot as plt
+# path='outputs/microscope_images_encoded/2024-03-12/basin5/40x/12125430_encoded.pt'
+# image=torch.load(path)
 
-# Set up the figure and subplots
-num_channels = image.shape[0]  # Number of filters
-fig, axes = plt.subplots(num_channels, 1, figsize=(5, num_channels * 3))
-for i in range(num_channels):
-    axes[i].imshow(image[i, :, :].numpy(), cmap='gray')
-    axes[i].set_title(f'Filter {i+1}')
-    axes[i].axis('off')
-plt.tight_layout()
-plt.show()
+# # Set up the figure and subplots
+# num_channels = image.shape[0]  # Number of filters
+# fig, axes = plt.subplots(num_channels, 1, figsize=(5, num_channels * 3))
+# for i in range(num_channels):
+#     axes[i].imshow(image[i, :, :].numpy(), cmap='gray')
+#     axes[i].set_title(f'Filter {i+1}')
+#     axes[i].axis('off')
+# plt.tight_layout()
+# plt.show()
