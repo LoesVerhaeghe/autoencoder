@@ -4,7 +4,7 @@ import time
 import matplotlib.pyplot as plt
 
 def train_autoencoder(num_epochs, model, optimizer, device, train_loader, val_loader=None,
-                         loss_fn=nn.MSELoss(), skip_epoch_stats=False, plot_losses=False, save_model=False, 
+                         loss_fn=nn.MSELoss(), skip_epoch_stats=False, plot_losses_path=None, save_model_path=None, 
                          patience=5):
     # Use GPU if available
     model.to(device)
@@ -121,7 +121,7 @@ def train_autoencoder(num_epochs, model, optimizer, device, train_loader, val_lo
 
     print('Total Training Time: %.2f min' % ((time.time() - start_time)/60))
 
-    if plot_losses:
+    if plot_losses_path is not None:
         plt.figure()
         plt.plot(log_dict['train_total_loss_per_epoch'], '.-', label='Total train loss')
         plt.plot(log_dict['train_mse_loss_per_epoch'], '.-', label='MSE train loss')
@@ -132,10 +132,11 @@ def train_autoencoder(num_epochs, model, optimizer, device, train_loader, val_lo
         plt.xlabel('Epoch')
         plt.ylabel('Loss')
         plt.legend()
+        plt.savefig(f'{plot_losses_path}', dpi=300, bbox_inches='tight', pad_inches=0.1)  
         plt.show()
 
-    if save_model:
-        torch.save(model.state_dict(), save_model)
+    if save_model_path is not None:
+        torch.save(model, save_model_path)
 
     return model, log_dict  # Return the trained model
 

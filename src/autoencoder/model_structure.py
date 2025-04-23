@@ -26,15 +26,15 @@ class Autoencoder(nn.Module):
             nn.BatchNorm2d(128),
             nn.Conv2d(128, 8, kernel_size=3, stride=2, padding=1),  
     
-            nn.Flatten(),  # Flatten before latent space
-            nn.Linear(8 * 32 * 24, 128),  # H and W are the input image dimensions
+          #   nn.Flatten(),  # Flatten before latent space
+          #   nn.Linear(8 * 32 * 24, 128),  # H and W are the input image dimensions
             # nn.ReLU() #optional, can help sometimes...
         )
 
        self.decoder = nn.Sequential(
-            nn.Linear(128, 8 * 32 * 24),  # Match the flattened dimension
-            nn.ReLU(),
-            nn.Unflatten(1, (8, 24, 32)),  # Reshape to match the input to ConvTranspose
+          #   nn.Linear(128, 8 * 32 * 24),  # Match the flattened dimension
+          #   nn.ReLU(),
+          #   nn.Unflatten(1, (8, 24, 32)),  # Reshape to match the input to ConvTranspose
 
             nn.ConvTranspose2d(8, 128, kernel_size=3, stride=2, padding=1, output_padding=1), 
             nn.LeakyReLU(),

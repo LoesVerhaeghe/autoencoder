@@ -5,3 +5,6 @@ build/
 dist/
 data/
 outputs/microscope_images_encoded
+outputs/microscope_images_encoded_128features
+outputs/microscope_images_encoded_perceptuallossonly
+outputs/model_perceptualloss

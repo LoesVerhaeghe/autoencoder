@@ -2,6 +2,7 @@ from utils.plotting_utilities import visualize_reconstruction
 from src.autoencoder.model_structure import Autoencoder
 from src.autoencoder.training_autoencoder import train_autoencoder
 from src.autoencoder.images_dataset import MicroscopicImages
+from src.perceptual_loss import PerceptualLoss # Import the class you just defined
 import torch.optim as optim
 from torchsummary import summary
 import torch
@@ -15,34 +16,52 @@ from torchmetrics.image import StructuralSimilarityIndexMeasure as SSIM
 
 #use GPU if available
 torch.cuda.set_device(0) 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print('device =', device)
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print('device =', DEVICE)
 
-### Loss functions
-mse_loss_fn = nn.MSELoss()
+# ### Loss functions
+# mse_loss_fn = nn.MSELoss()
 ssim_metric = SSIM(data_range=1.0, gaussian_kernel=True, kernel_size=7)
 
-def combined_loss(reconstructed, original, device):
+# def combined_loss(reconstructed, original, device):
+#     ssim_metric.to(device)
+#     mse_loss = 10*mse_loss_fn(reconstructed, original)
+#     ssim_val = ssim_metric(reconstructed, original)
+#     ssim_loss = 1.0 - ssim_val
+#     total_loss = mse_loss + ssim_loss
+#     return total_loss, mse_loss, ssim_loss
+
+### perceptual loss
+RECONSTRUCTION_LOSS_WEIGHT = 0  # Weight for MSE/SSIM
+PERCEPTUAL_LOSS_WEIGHT = 1 # Weight for Perceptual Loss (tune this)
+
+# Perceptual Loss
+perceptual_criterion = PerceptualLoss(device=DEVICE).to(DEVICE)
+
+# --- Combined Loss Function ---
+def combined_loss(outputs, targets, device):
+    # Reconstruction Loss
     ssim_metric.to(device)
-    mse_loss = 10*mse_loss_fn(reconstructed, original)
-    ssim_val = ssim_metric(reconstructed, original)
-    ssim_loss = 1.0 - ssim_val
-    total_loss = mse_loss + ssim_loss
-    return total_loss, mse_loss, ssim_loss
+    recon_loss = RECONSTRUCTION_LOSS_WEIGHT * ssim_metric(outputs, targets)
+
+    # Perceptual Loss
+    perc_loss = PERCEPTUAL_LOSS_WEIGHT * perceptual_criterion(outputs, targets)
+
+    # Combine losses
+    total_loss = (recon_loss + perc_loss)
+
+    return total_loss, recon_loss, perc_loss # Return individual components for logging
 
 
 # load model structure
-model=Autoencoder().to(device)
+model=Autoencoder().to(DEVICE)
 print(summary(model, input_size=(1, 384, 512)))
 
 # Setting training parameters
 RANDOM_SEED= 69
 LEARNING_RATE = 0.0001 # bigger than 0.0001 ends in local minima
-BATCH_SIZE = 32
+BATCH_SIZE = 16
 NUM_EPOCHS = 1000 # we use early stopping anyway
-SKIP_EPOCH_STATS=False
-SAVE_MODEL=False
-PLOT_LOSSES=True
 OPTIMIZER = optim.Adam(model.parameters(), lr=LEARNING_RATE)
 
 torch.manual_seed(RANDOM_SEED)
@@ -67,24 +86,24 @@ val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, num_workers=10, pin_
 trained_model, log_dict=train_autoencoder(NUM_EPOCHS, 
                                           model, 
                                           OPTIMIZER, 
-                                          device, 
+                                          DEVICE, 
                                           train_loader, 
                                           val_loader, 
                                           loss_fn=combined_loss, 
-                                          skip_epoch_stats=SKIP_EPOCH_STATS, 
-                                          plot_losses=PLOT_LOSSES, 
-                                          save_model=SAVE_MODEL)
+                                          skip_epoch_stats=False, 
+                                          plot_losses_path='outputs/losses.png', 
+                                          save_model_path='outputs/model_perceptualloss.pt')
 
 
-visualize_reconstruction(model, device, train_loader, num_images=5, path='outputs/traindataset_reconstruction.png')
-visualize_reconstruction(model, device, val_loader, num_images=5, path='outputs/validationdataset_reconstruction.png')
+visualize_reconstruction(model, DEVICE, train_loader, num_images=5, path='outputs/traindataset_reconstruction.png')
+visualize_reconstruction(model, DEVICE, val_loader, num_images=5, path='outputs/validationdataset_reconstruction.png')
 
 
 #to generate encoded images with trained model, first copy the preprocessed data folder in the output folder and rename, then run this code:
 
-#Copy the folder structure from src_folder to dst_folder
+# Copy the folder structure from src_folder to dst_folder
 src_folder = 'data/microscope_images_grayscaled'
-dst_folder = 'outputs/microscope_images_encoded_128features'
+dst_folder = 'outputs/microscope_images_encoded_perceptuallossonly'
 shutil.copytree(src_folder, dst_folder)
 
 def encode_images(magnification, dst_folder):
@@ -96,7 +115,7 @@ def encode_images(magnification, dst_folder):
     
     with torch.no_grad():
         for i, data in enumerate(data_loader):
-            data = data.to(device)
+            data = data.to(DEVICE)
             encoded_image = model(data, get_encoded=True)
             encoded_image = encoded_image.squeeze(0)  # Remove batch dimension
 
