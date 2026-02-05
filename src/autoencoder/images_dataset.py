@@ -1,7 +1,8 @@
 from utils.helpers import extract_image_paths
 from torch.utils.data import Dataset
 import torch
-import cv2
+import os
+import pandas as pd
 
 class MicroscopicImages(Dataset):
     def __init__(self, root, magnification, transform=None):
